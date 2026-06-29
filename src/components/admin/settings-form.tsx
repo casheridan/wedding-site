@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useActionState } from "react";
 import { saveSettings, type SettingsState } from "@/server/settings";
+import type { RsvpQuestion } from "@/config/site";
 import { Card, adminInputClass, adminLabelClass } from "@/components/admin/ui";
+import { RsvpQuestionsEditor } from "@/components/admin/rsvp-questions-editor";
 import { Button } from "@/components/ui/button";
 
 export type SettingsInitial = Record<string, string>;
@@ -14,7 +16,7 @@ export type SettingsLists = {
   travel: { name: string; address: string; mapUrl?: string; notes?: string }[];
   faq: { question: string; answer: string }[];
   mealOptions: string[];
-  rsvpQuestions: { label: string; options?: string[]; required?: boolean }[];
+  rsvpQuestions: RsvpQuestion[];
 };
 
 const initialState: SettingsState = {};
@@ -442,33 +444,7 @@ export function SettingsForm({
         initialRows={lists.mealOptions.map((text) => ({ text }))}
       />
 
-      <ListEditor
-        heading="Custom RSVP questions"
-        description="Extra questions shown to attending guests. Leave “Choices” blank for a text box, or list comma-separated choices to make it a dropdown."
-        name="rsvpQuestionsJson"
-        addLabel="Add question"
-        fields={[
-          {
-            key: "label",
-            label: "Question",
-            full: true,
-            placeholder: "e.g. Will you need the shuttle?",
-          },
-          {
-            key: "options",
-            label: "Choices (optional, comma-separated)",
-            full: true,
-            placeholder: "Yes, No, Not sure yet",
-          },
-          { key: "required", label: "Required", check: true, full: true },
-        ]}
-        blank={{ label: "", options: "", required: "" }}
-        initialRows={lists.rsvpQuestions.map((q) => ({
-          label: q.label,
-          options: (q.options ?? []).join(", "),
-          required: q.required ? "1" : "",
-        }))}
-      />
+      <RsvpQuestionsEditor initial={lists.rsvpQuestions} />
 
       <Card className="space-y-4">
         <h2 className="text-lg text-sage-800">Seating password</h2>

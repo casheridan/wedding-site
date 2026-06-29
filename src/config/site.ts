@@ -28,14 +28,19 @@ export type ScheduleItem = {
 };
 
 export type RsvpQuestion = {
-  /** Stable id used to key answers within a submission. */
+  /** Stable id used to key answers and reference from conditional questions. */
   id: string;
   /** The question text shown to guests. */
   label: string;
   /** If non-empty, renders a dropdown of these choices instead of a text box. */
   options?: string[];
-  /** Require an answer (only enforced for attending guests). */
+  /** Require an answer (only enforced for attending guests when visible). */
   required?: boolean;
+  /**
+   * Conditional display: only show this question when the answer to an earlier
+   * question (`questionId`) exactly equals `value`. Omit to always show.
+   */
+  showIf?: { questionId: string; value: string };
 };
 
 export type Place = {

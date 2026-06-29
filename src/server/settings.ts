@@ -37,6 +37,62 @@ function parseRows(raw: string): Record<string, string>[] {
   }
 }
 
+/**
+ * Parse the RSVP custom-questions editor payload. Preserves each question's
+ * stable `id`, sanitizes choices, and keeps a `showIf` conditional only when it
+ * references a question defined *earlier* in the list (prevents cycles/dangles).
+ */
+function parseRsvpQuestions(raw: string): RsvpQuestion[] {
+  if (!raw) return [];
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(data)) return [];
+
+  const out: RsvpQuestion[] = [];
+  const seenIds = new Set<string>();
+
+  for (const item of data.slice(0, 50)) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const label = String(r.label ?? "").slice(0, 300).trim();
+    if (!label) continue;
+
+    let id = String(r.id ?? "").slice(0, 64).trim();
+    if (!id || seenIds.has(id)) id = `q${out.length + 1}`;
+    seenIds.add(id);
+
+    const options = Array.isArray(r.options)
+      ? r.options
+          .map((o) => String(o ?? "").slice(0, 200).trim())
+          .filter(Boolean)
+      : [];
+
+    const question: RsvpQuestion = {
+      id,
+      label,
+      ...(options.length > 0 ? { options } : {}),
+      ...(r.required === true ? { required: true } : {}),
+    };
+
+    const showIf = r.showIf as Record<string, unknown> | undefined;
+    if (showIf && typeof showIf === "object") {
+      const questionId = String(showIf.questionId ?? "").trim();
+      const value = String(showIf.value ?? "").slice(0, 200).trim();
+      // Only honor references to an already-defined (earlier) question.
+      if (questionId && value && questionId !== id && seenIds.has(questionId)) {
+        question.showIf = { questionId, value };
+      }
+    }
+
+    out.push(question);
+  }
+  return out;
+}
+
 export async function saveSettings(
   _prev: SettingsState,
   formData: FormData
@@ -74,22 +130,9 @@ export async function saveSettings(
     .map((r) => r.text)
     .filter(Boolean);
 
-  const rsvpQuestions: RsvpQuestion[] = rows("rsvpQuestionsJson")
-    .filter((r) => r.label)
-    .map((r, i) => {
-      const opts = r.options
-        ? r.options
-            .split(",")
-            .map((o) => o.trim())
-            .filter(Boolean)
-        : [];
-      return {
-        id: `q${i + 1}`,
-        label: r.label,
-        ...(opts.length > 0 ? { options: opts } : {}),
-        ...(r.required === "1" ? { required: true } : {}),
-      };
-    });
+  const rsvpQuestions = parseRsvpQuestions(
+    String(formData.get("rsvpQuestionsJson") ?? "")
+  );
 
   const partySizeNum = parseInt(s("maxPartySize"), 10);
   const maxPartySize =

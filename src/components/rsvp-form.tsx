@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitRsvp, type RsvpResult } from "@/server/rsvp";
 import type { RsvpQuestion } from "@/config/site";
+import { visibleQuestionIds } from "@/lib/rsvp-questions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export function RsvpForm({
   const hasMeals = mealOptions.length > 0;
   const totalPartySize = 1 + guests.length;
   const canAddGuest = totalPartySize < maxPartySize;
+  const visibleIds = visibleQuestionIds(questions, answers);
 
   const addGuest = () =>
     setGuests((g) => [...g, { name: "", meal: "", dietary: "" }]);
@@ -55,7 +57,12 @@ export function RsvpForm({
         primaryDietary,
         additionalGuests: attending === "yes" ? guests : [],
         songRequest: attending === "yes" ? songRequest : "",
-        answers: attending === "yes" ? answers : {},
+        answers:
+          attending === "yes"
+            ? Object.fromEntries(
+                Object.entries(answers).filter(([id]) => visibleIds.has(id))
+              )
+            : {},
         message,
       });
       setResult(res);
@@ -243,6 +250,7 @@ export function RsvpForm({
           )}
 
           {questions.map((q) => {
+            if (!visibleIds.has(q.id)) return null;
             const label = q.required ? q.label : `${q.label} (optional)`;
             return (
               <Field key={q.id} label={label} htmlFor={`q-${q.id}`}>

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSiteContent } from "@/lib/content";
+import { visibleQuestionIds } from "@/lib/rsvp-questions";
 
 const guestSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -44,7 +45,9 @@ export async function submitRsvp(input: unknown): Promise<RsvpResult> {
   const customAnswers: { question: string; answer: string }[] = [];
   if (attending) {
     const site = await getSiteContent();
+    const visible = visibleQuestionIds(site.rsvp.questions, data.answers);
     for (const q of site.rsvp.questions) {
+      if (!visible.has(q.id)) continue;
       const answer = (data.answers[q.id] ?? "").trim();
       if (q.required && !answer) {
         return { ok: false, message: `Please answer: ${q.label}` };
