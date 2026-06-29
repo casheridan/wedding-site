@@ -425,6 +425,19 @@ export function SettingsForm({
             Ask guests for a song request
           </label>
         </div>
+        <label className="flex items-center gap-2 text-sm text-ink/75">
+          <input
+            type="checkbox"
+            name="rsvpLocked"
+            defaultChecked={initial.rsvpLocked === "1"}
+            className="h-4 w-4 rounded border-sage-300 text-sage-600"
+          />
+          Require the guest password to RSVP
+        </label>
+        <p className="text-xs text-ink/45">
+          When on, guests must enter the same password as the seating page before
+          they can RSVP. Unlocking either page unlocks both.
+        </p>
       </Card>
 
       <ListEditor
@@ -447,9 +460,9 @@ export function SettingsForm({
       <RsvpQuestionsEditor initial={lists.rsvpQuestions} />
 
       <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">Seating password</h2>
+        <h2 className="text-lg text-sage-800">Guest password</h2>
         <Field
-          label="Shared password guests enter to view seating"
+          label="Shared password guests enter to view seating (and to RSVP, if locked)"
           name="seatingPassword"
           defaultValue={initial.seatingPassword}
           hint="Leave blank to keep the current password."

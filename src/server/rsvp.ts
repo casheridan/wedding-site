@@ -1,9 +1,26 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSiteContent } from "@/lib/content";
 import { visibleQuestionIds } from "@/lib/rsvp-questions";
+import { verifySeatingPassword, startSeatingSession } from "@/lib/auth";
+
+export type RsvpGateState = { error?: string };
+
+/** Unlock the RSVP page using the shared guest password (same as seating). */
+export async function unlockRsvp(
+  _prev: RsvpGateState,
+  formData: FormData
+): Promise<RsvpGateState> {
+  const password = String(formData.get("password") ?? "");
+  if (!(await verifySeatingPassword(password))) {
+    return { error: "That password didn't match. Please try again." };
+  }
+  await startSeatingSession();
+  redirect("/rsvp");
+}
 
 const guestSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),

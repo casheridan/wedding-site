@@ -1,5 +1,5 @@
 import { getSiteContent } from "@/lib/content";
-import { getSeatingPassword } from "@/lib/auth";
+import { getSeatingPassword, isRsvpLocked } from "@/lib/auth";
 import { PageHeading } from "@/components/admin/ui";
 import {
   SettingsForm,
@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminSettingsPage() {
   const site = await getSiteContent();
   const seatingPassword = (await getSeatingPassword()) ?? "";
+  const rsvpLocked = await isRsvpLocked();
 
   const initial: SettingsInitial = {
     partnerA: site.couple.partnerA,
@@ -36,6 +37,7 @@ export default async function AdminSettingsPage() {
     rsvpDeadline: site.rsvp.deadlineDisplay,
     maxPartySize: String(site.rsvp.maxPartySize),
     askSongRequest: site.rsvp.askSongRequest ? "1" : "",
+    rsvpLocked: rsvpLocked ? "1" : "",
     seatingPassword,
   };
 

@@ -108,6 +108,15 @@ export async function startSeatingSession(): Promise<void> {
   });
 }
 
+/**
+ * Whether the public RSVP page should sit behind the shared guest password.
+ * Off by default; toggled from the admin settings. Reuses the seating password
+ * and the same unlock session, so unlocking either page unlocks both.
+ */
+export async function isRsvpLocked(): Promise<boolean> {
+  return (await getSetting<boolean>("rsvpLocked")) === true;
+}
+
 export async function hasSeatingAccess(): Promise<boolean> {
   const store = await cookies();
   const token = store.get(SEATING_COOKIE)?.value;

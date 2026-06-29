@@ -182,6 +182,7 @@ export async function saveSettings(
 
   try {
     await setSetting("content", content);
+    await setSetting("rsvpLocked", formData.get("rsvpLocked") === "on");
     const seatingPassword = s("seatingPassword");
     if (seatingPassword) {
       await setSetting("seatingPassword", seatingPassword);
