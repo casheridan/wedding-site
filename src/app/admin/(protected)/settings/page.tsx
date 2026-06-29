@@ -48,6 +48,7 @@ export default async function AdminSettingsPage() {
     faq: site.faq,
     mealOptions: site.rsvp.mealOptions,
     rsvpQuestions: site.rsvp.questions,
+    childQuestions: site.rsvp.childQuestions,
   };
 
   return (

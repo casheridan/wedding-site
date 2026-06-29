@@ -7,25 +7,33 @@ import { visibleQuestionIds } from "@/lib/rsvp-questions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Guest = { name: string; meal: string; dietary: string };
+type Guest = {
+  name: string;
+  meal: string;
+  dietary: string;
+  child: boolean;
+  answers: Record<string, string>;
+};
 
 export function RsvpForm({
   mealOptions,
   maxPartySize,
   askSongRequest,
   questions = [],
+  childQuestions = [],
 }: {
   mealOptions: string[];
   maxPartySize: number;
   askSongRequest: boolean;
   questions?: RsvpQuestion[];
+  childQuestions?: RsvpQuestion[];
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [attending, setAttending] = useState<"" | "yes" | "no">("");
   const [primaryMeal, setPrimaryMeal] = useState("");
   const [primaryDietary, setPrimaryDietary] = useState("");
-  const [guests, setGuests] = useState<Guest[]>([]);
+  const [members, setMembers] = useState<Guest[]>([]);
   const [songRequest, setSongRequest] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -34,16 +42,9 @@ export function RsvpForm({
   const [result, setResult] = useState<RsvpResult | null>(null);
 
   const hasMeals = mealOptions.length > 0;
-  const totalPartySize = 1 + guests.length;
+  const totalPartySize = 1 + members.length;
   const canAddGuest = totalPartySize < maxPartySize;
   const visibleIds = visibleQuestionIds(questions, answers);
-
-  const addGuest = () =>
-    setGuests((g) => [...g, { name: "", meal: "", dietary: "" }]);
-  const removeGuest = (i: number) =>
-    setGuests((g) => g.filter((_, idx) => idx !== i));
-  const updateGuest = (i: number, patch: Partial<Guest>) =>
-    setGuests((g) => g.map((guest, idx) => (idx === i ? { ...guest, ...patch } : guest)));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +56,22 @@ export function RsvpForm({
         attending,
         primaryMeal,
         primaryDietary,
-        additionalGuests: attending === "yes" ? guests : [],
+        additionalGuests:
+          attending === "yes"
+            ? members.map((g) => ({
+                name: g.name,
+                meal: g.meal,
+                dietary: g.dietary,
+                child: g.child,
+                answers: g.child
+                  ? Object.fromEntries(
+                      Object.entries(g.answers).filter(([id]) =>
+                        visibleQuestionIds(childQuestions, g.answers).has(id)
+                      )
+                    )
+                  : {},
+              }))
+            : [],
         songRequest: attending === "yes" ? songRequest : "",
         answers:
           attending === "yes"
@@ -167,74 +183,24 @@ export function RsvpForm({
             />
           </Field>
 
-          {/* Additional guests */}
-          <div className="space-y-4">
-            {guests.map((guest, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-sage-100 bg-cream/40 p-4"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink/80">
-                    Guest {i + 2}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeGuest(i)}
-                    className="text-xs uppercase tracking-widest text-blush-500 hover:text-blush-400"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    required
-                    value={guest.name}
-                    onChange={(e) => updateGuest(i, { name: e.target.value })}
-                    className={inputClass}
-                    placeholder="Guest name"
-                  />
-                  {hasMeals && (
-                    <select
-                      value={guest.meal}
-                      onChange={(e) => updateGuest(i, { meal: e.target.value })}
-                      className={inputClass}
-                    >
-                      <option value="">Select a meal…</option>
-                      {mealOptions.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  <input
-                    type="text"
-                    value={guest.dietary}
-                    onChange={(e) => updateGuest(i, { dietary: e.target.value })}
-                    className={inputClass}
-                    placeholder="Dietary restrictions (optional)"
-                  />
-                </div>
-              </div>
-            ))}
+          {/* Others in the party */}
+          <GuestSection
+            title="Others in your party"
+            hint="Everyone else included on your invitation. Mark any children so we can plan for them."
+            guests={members}
+            setGuests={setMembers}
+            mealOptions={mealOptions}
+            hasMeals={hasMeals}
+            childQuestions={childQuestions}
+            canAdd={canAddGuest}
+          />
 
-            {canAddGuest && (
-              <button
-                type="button"
-                onClick={addGuest}
-                className="w-full rounded-xl border border-dashed border-sage-300 py-3 text-sm text-sage-700 transition-colors hover:bg-sage-50"
-              >
-                + Add a guest
-              </button>
-            )}
-            {!canAddGuest && (
-              <p className="text-xs text-ink/50">
-                Party limit reached ({maxPartySize}). Contact us if you need more.
-              </p>
-            )}
-          </div>
+          {!canAddGuest && (
+            <p className="text-xs text-ink/50">
+              Party limit reached ({maxPartySize} total). Contact us if you need
+              more.
+            </p>
+          )}
 
           {askSongRequest && (
             <Field label="Song request (optional)" htmlFor="songRequest">
@@ -311,6 +277,171 @@ export function RsvpForm({
         {isPending ? "Sending…" : "Send RSVP"}
       </Button>
     </form>
+  );
+}
+
+function GuestSection({
+  title,
+  hint,
+  guests,
+  setGuests,
+  mealOptions,
+  hasMeals,
+  childQuestions,
+  canAdd,
+}: {
+  title: string;
+  hint: string;
+  guests: Guest[];
+  setGuests: React.Dispatch<React.SetStateAction<Guest[]>>;
+  mealOptions: string[];
+  hasMeals: boolean;
+  childQuestions: RsvpQuestion[];
+  canAdd: boolean;
+}) {
+  const add = () =>
+    setGuests((g) => [
+      ...g,
+      { name: "", meal: "", dietary: "", child: false, answers: {} },
+    ]);
+  const remove = (i: number) =>
+    setGuests((g) => g.filter((_, idx) => idx !== i));
+  const update = (i: number, patch: Partial<Guest>) =>
+    setGuests((g) =>
+      g.map((guest, idx) => (idx === i ? { ...guest, ...patch } : guest))
+    );
+  const setAnswer = (i: number, qid: string, value: string) =>
+    setGuests((g) =>
+      g.map((guest, idx) =>
+        idx === i
+          ? { ...guest, answers: { ...guest.answers, [qid]: value } }
+          : guest
+      )
+    );
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-medium text-ink/80">{title}</p>
+        <p className="text-xs text-ink/55">{hint}</p>
+      </div>
+
+      {guests.map((guest, i) => {
+        const childVisible = guest.child
+          ? visibleQuestionIds(childQuestions, guest.answers)
+          : new Set<string>();
+        return (
+          <div
+            key={i}
+            className="rounded-xl border border-sage-100 bg-cream/40 p-4"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-ink/80">
+                Guest {i + 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="text-xs uppercase tracking-widest text-blush-500 hover:text-blush-400"
+              >
+                Remove
+              </button>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                required
+                value={guest.name}
+                onChange={(e) => update(i, { name: e.target.value })}
+                className={inputClass}
+                placeholder="Full name"
+              />
+              <label className="flex items-center gap-2 text-sm text-ink/75">
+                <input
+                  type="checkbox"
+                  checked={guest.child}
+                  onChange={(e) => update(i, { child: e.target.checked })}
+                  className="h-4 w-4 rounded border-sage-300 text-sage-600"
+                />
+                This guest is a child
+              </label>
+              {hasMeals && (
+                <select
+                  value={guest.meal}
+                  onChange={(e) => update(i, { meal: e.target.value })}
+                  className={inputClass}
+                >
+                  <option value="">Select a meal…</option>
+                  {mealOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <input
+                type="text"
+                value={guest.dietary}
+                onChange={(e) => update(i, { dietary: e.target.value })}
+                className={inputClass}
+                placeholder="Dietary restrictions (optional)"
+              />
+
+              {guest.child &&
+                childQuestions.map((q) => {
+                  if (!childVisible.has(q.id)) return null;
+                  const id = `g${i}-${q.id}`;
+                  return (
+                    <div key={q.id}>
+                      <label
+                        htmlFor={id}
+                        className="mb-1.5 block text-sm text-ink/70"
+                      >
+                        {q.required ? q.label : `${q.label} (optional)`}
+                      </label>
+                      {q.options && q.options.length > 0 ? (
+                        <select
+                          id={id}
+                          required={q.required}
+                          value={guest.answers[q.id] ?? ""}
+                          onChange={(e) => setAnswer(i, q.id, e.target.value)}
+                          className={inputClass}
+                        >
+                          <option value="">Select…</option>
+                          {q.options.map((o) => (
+                            <option key={o} value={o}>
+                              {o}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          id={id}
+                          type="text"
+                          required={q.required}
+                          value={guest.answers[q.id] ?? ""}
+                          onChange={(e) => setAnswer(i, q.id, e.target.value)}
+                          className={inputClass}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        );
+      })}
+
+      {canAdd && (
+        <button
+          type="button"
+          onClick={add}
+          className="w-full rounded-xl border border-dashed border-sage-300 py-3 text-sm text-sage-700 transition-colors hover:bg-sage-50"
+        >
+          + Add a guest
+        </button>
+      )}
+    </div>
   );
 }
 

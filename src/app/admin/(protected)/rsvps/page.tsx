@@ -31,6 +31,10 @@ export default async function AdminRsvpsPage() {
   const attending = rsvps.filter((r) => r.attending);
   const declinedCount = rsvps.length - attending.length;
   const guestsAttending = attending.reduce((sum, r) => sum + r.partySize, 0);
+  const childrenAttending = attending.reduce(
+    (sum, r) => sum + r.guests.filter((g) => g.isChild).length,
+    0
+  );
 
   // Tally meal choices across attending guests.
   const mealTally = new Map<string, number>();
@@ -55,9 +59,10 @@ export default async function AdminRsvpsPage() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <StatCard label="Responses" value={rsvps.length} />
         <StatCard label="Guests attending" value={guestsAttending} />
+        <StatCard label="Children" value={childrenAttending} />
         <StatCard label="Parties attending" value={attending.length} />
         <StatCard label="Declined" value={declinedCount} />
       </div>
@@ -103,7 +108,15 @@ export default async function AdminRsvpsPage() {
                       : "bg-blush-100 text-blush-500"
                   )}
                 >
-                  {r.attending ? `Attending · ${r.partySize}` : "Declined"}
+                  {r.attending
+                    ? `Attending · ${r.partySize}${
+                        r.guests.some((g) => g.isChild)
+                          ? ` (${
+                              r.guests.filter((g) => g.isChild).length
+                            } child)`
+                          : ""
+                      }`
+                    : "Declined"}
                 </span>
                 <p className="mt-1 text-xs text-ink/45">
                   {formatDate(r.createdAt.toISOString())}
@@ -114,26 +127,40 @@ export default async function AdminRsvpsPage() {
             {r.attending && r.guests.length > 0 && (
               <ul className="mt-4 divide-y divide-sage-50 border-t border-sage-50 text-sm">
                 {r.guests.map((g) => (
-                  <li
-                    key={g.id}
-                    className="flex flex-wrap items-baseline justify-between gap-2 py-2"
-                  >
-                    <span className="text-ink">
-                      {g.name}
-                      {g.isPrimary && (
-                        <span className="ml-2 text-xs text-ink/40">
-                          (primary)
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-ink/60">
-                      {g.meal || "—"}
-                      {g.dietary && (
-                        <span className="ml-2 text-blush-500">
-                          · {g.dietary}
-                        </span>
-                      )}
-                    </span>
+                  <li key={g.id} className="py-2">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <span className="text-ink">
+                        {g.name}
+                        {g.isPrimary && (
+                          <span className="ml-2 text-xs text-ink/40">
+                            (primary)
+                          </span>
+                        )}
+                        {g.isChild && (
+                          <span className="ml-2 rounded-full bg-lavender-100 px-2 py-0.5 text-xs text-lavender-700">
+                            child
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-ink/60">
+                        {g.meal || "—"}
+                        {g.dietary && (
+                          <span className="ml-2 text-blush-500">
+                            · {g.dietary}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    {customAnswersOf(g.customAnswers).length > 0 && (
+                      <ul className="ml-1 mt-1 space-y-0.5 text-xs text-ink/55">
+                        {customAnswersOf(g.customAnswers).map((a, idx) => (
+                          <li key={idx}>
+                            {a.question}:{" "}
+                            <span className="text-ink/75">{a.answer}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 ))}
               </ul>

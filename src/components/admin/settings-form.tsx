@@ -17,6 +17,7 @@ export type SettingsLists = {
   faq: { question: string; answer: string }[];
   mealOptions: string[];
   rsvpQuestions: RsvpQuestion[];
+  childQuestions: RsvpQuestion[];
 };
 
 const initialState: SettingsState = {};
@@ -458,6 +459,14 @@ export function SettingsForm({
       />
 
       <RsvpQuestionsEditor initial={lists.rsvpQuestions} />
+
+      <RsvpQuestionsEditor
+        initial={lists.childQuestions}
+        name="childQuestionsJson"
+        heading="Child questions"
+        description="Extra questions asked for each party member marked as a child (e.g. age, high chair, kids' meal). Same options as above."
+        emptyHint="No child questions yet."
+      />
 
       <Card className="space-y-4">
         <h2 className="text-lg text-sage-800">Guest password</h2>

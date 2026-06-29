@@ -190,6 +190,8 @@ export const siteConfig = {
      * Each needs a stable `id`; add an `options` list to make it a dropdown.
      */
     questions: [] as RsvpQuestion[],
+    /** Extra questions asked for each party member marked as a child. */
+    childQuestions: [] as RsvpQuestion[],
   },
 
   /** Where guests can reach you with questions. */

@@ -38,7 +38,19 @@ const choicesOf = (options: string) =>
     .map((o) => o.trim())
     .filter(Boolean);
 
-export function RsvpQuestionsEditor({ initial }: { initial: RsvpQuestion[] }) {
+export function RsvpQuestionsEditor({
+  initial,
+  name = "rsvpQuestionsJson",
+  heading = "Custom RSVP questions",
+  description = "Extra questions shown to attending guests. Leave “Choices” blank for a text box, or list comma-separated choices for a dropdown. A question can be shown only when an earlier question has a specific answer.",
+  emptyHint = "No custom questions yet — guests just get the standard fields.",
+}: {
+  initial: RsvpQuestion[];
+  name?: string;
+  heading?: string;
+  description?: string;
+  emptyHint?: string;
+}) {
   const [rows, setRows] = useState<Row[]>(() => initial.map(toRow));
 
   const update = (i: number, patch: Partial<Row>) =>
@@ -84,19 +96,13 @@ export function RsvpQuestionsEditor({ initial }: { initial: RsvpQuestion[] }) {
   return (
     <Card className="space-y-4">
       <div>
-        <h2 className="text-lg text-sage-800">Custom RSVP questions</h2>
-        <p className="mt-1 text-xs text-ink/45">
-          Extra questions shown to attending guests. Leave “Choices” blank for a
-          text box, or list comma-separated choices for a dropdown. A question
-          can be shown only when an earlier question has a specific answer.
-        </p>
+        <h2 className="text-lg text-sage-800">{heading}</h2>
+        <p className="mt-1 text-xs text-ink/45">{description}</p>
       </div>
 
       <div className="space-y-3">
         {rows.length === 0 && (
-          <p className="text-sm text-ink/45">
-            No custom questions yet — guests just get the standard fields.
-          </p>
+          <p className="text-sm text-ink/45">{emptyHint}</p>
         )}
 
         {rows.map((row, i) => {
@@ -221,7 +227,7 @@ export function RsvpQuestionsEditor({ initial }: { initial: RsvpQuestion[] }) {
 
       <input
         type="hidden"
-        name="rsvpQuestionsJson"
+        name={name}
         value={JSON.stringify(payload)}
         readOnly
       />

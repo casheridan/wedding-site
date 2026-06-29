@@ -35,6 +35,7 @@ export default async function RsvpPage() {
           maxPartySize={site.rsvp.maxPartySize}
           askSongRequest={site.rsvp.askSongRequest}
           questions={site.rsvp.questions}
+          childQuestions={site.rsvp.childQuestions}
         />
       )}
     </Section>

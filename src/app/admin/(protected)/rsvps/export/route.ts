@@ -53,9 +53,10 @@ export async function GET() {
     "Attending",
     "Party Size",
     "Guest Name",
-    "Primary",
+    "Role",
     "Meal",
     "Dietary",
+    "Child Info",
     "Song Request",
     "Note",
     ...questionCols,
@@ -82,13 +83,18 @@ export async function GET() {
 
     if (r.attending && r.guests.length > 0) {
       for (const g of r.guests) {
+        const role = g.isPrimary ? "Primary" : g.isChild ? "Child" : "Party";
+        const childInfo = answersOf(g.customAnswers)
+          .map((a) => `${a.question}: ${a.answer}`)
+          .join("; ");
         rows.push(
           [
             ...base,
             g.name,
-            g.isPrimary ? "Yes" : "No",
+            role,
             g.meal ?? "",
             g.dietary ?? "",
+            childInfo,
             ...tail,
           ]
             .map(csvCell)
@@ -96,7 +102,7 @@ export async function GET() {
         );
       }
     } else {
-      rows.push([...base, "", "", "", "", ...tail].map(csvCell).join(","));
+      rows.push([...base, "", "", "", "", "", ...tail].map(csvCell).join(","));
     }
   }
 

@@ -49,6 +49,10 @@ model RsvpGuest {
   meal      String?
   dietary   String?
   isPrimary Boolean  @default(false)
+  // Whether this party member is a child.
+  isChild   Boolean  @default(false)
+  // Answers to admin-defined child questions, snapshotted as { question, answer }.
+  customAnswers Json?
   createdAt DateTime @default(now())
 
   @@index([rsvpId])

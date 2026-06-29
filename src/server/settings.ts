@@ -133,6 +133,9 @@ export async function saveSettings(
   const rsvpQuestions = parseRsvpQuestions(
     String(formData.get("rsvpQuestionsJson") ?? "")
   );
+  const childQuestions = parseRsvpQuestions(
+    String(formData.get("childQuestionsJson") ?? "")
+  );
 
   const partySizeNum = parseInt(s("maxPartySize"), 10);
   const maxPartySize =
@@ -176,6 +179,7 @@ export async function saveSettings(
       mealOptions,
       askSongRequest: formData.get("askSongRequest") === "on",
       questions: rsvpQuestions,
+      childQuestions,
       ...(maxPartySize ? { maxPartySize } : {}),
     },
   };

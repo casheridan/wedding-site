@@ -32,6 +32,7 @@ export type ContentOverride = {
     maxPartySize?: number;
     askSongRequest?: boolean;
     questions?: RsvpQuestion[];
+    childQuestions?: RsvpQuestion[];
   };
 };
 

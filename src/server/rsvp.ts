@@ -26,6 +26,8 @@ const guestSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
   meal: z.string().trim().max(120).optional().default(""),
   dietary: z.string().trim().max(500).optional().default(""),
+  child: z.boolean().optional().default(false),
+  answers: z.record(z.string(), z.string().max(2000)).optional().default({}),
 });
 
 const rsvpSchema = z.object({
@@ -57,34 +59,89 @@ export async function submitRsvp(input: unknown): Promise<RsvpResult> {
   const data = parsed.data;
   const attending = data.attending === "yes";
 
-  // Custom questions: enforce required answers and snapshot the ones provided
-  // (label + answer) so responses stay readable even if questions change later.
-  const customAnswers: { question: string; answer: string }[] = [];
-  if (attending) {
-    const site = await getSiteContent();
-    const visible = visibleQuestionIds(site.rsvp.questions, data.answers);
-    for (const q of site.rsvp.questions) {
+  type Snapshot = { question: string; answer: string }[];
+  type GuestRow = {
+    name: string;
+    meal: string;
+    dietary: string;
+    isPrimary: boolean;
+    isChild: boolean;
+    customAnswers: Snapshot | null;
+  };
+
+  // Snapshot a set of question answers (label + answer) and enforce required
+  // ones, so responses stay readable even if questions change later.
+  function collect(
+    questions: { id: string; label: string; required?: boolean }[],
+    raw: Record<string, string>,
+    visible: Set<string>
+  ): Snapshot | { error: string } {
+    const snap: Snapshot = [];
+    for (const q of questions) {
       if (!visible.has(q.id)) continue;
-      const answer = (data.answers[q.id] ?? "").trim();
-      if (q.required && !answer) {
-        return { ok: false, message: `Please answer: ${q.label}` };
-      }
-      if (answer) customAnswers.push({ question: q.label, answer });
+      const answer = (raw[q.id] ?? "").trim();
+      if (q.required && !answer) return { error: q.label };
+      if (answer) snap.push({ question: q.label, answer });
     }
+    return snap;
   }
 
-  // Normalize attendees: primary guest first, then plus-ones.
-  const guests = attending
-    ? [
-        {
-          name: data.name,
-          meal: data.primaryMeal,
-          dietary: data.primaryDietary,
-          isPrimary: true,
-        },
-        ...data.additionalGuests.map((g) => ({ ...g, isPrimary: false })),
-      ]
-    : [];
+  const customAnswers: Snapshot = [];
+  const guests: GuestRow[] = [];
+
+  if (attending) {
+    const site = await getSiteContent();
+
+    // Party-level custom questions.
+    const partyResult = collect(
+      site.rsvp.questions,
+      data.answers,
+      visibleQuestionIds(site.rsvp.questions, data.answers)
+    );
+    if ("error" in partyResult) {
+      return { ok: false, message: `Please answer: ${partyResult.error}` };
+    }
+    customAnswers.push(...partyResult);
+
+    // Primary guest, then the rest of the party (with per-child answers).
+    guests.push({
+      name: data.name,
+      meal: data.primaryMeal,
+      dietary: data.primaryDietary,
+      isPrimary: true,
+      isChild: false,
+      customAnswers: null,
+    });
+
+    const childQs = site.rsvp.childQuestions;
+    for (const g of data.additionalGuests) {
+      let childAnswers: Snapshot | null = null;
+      if (g.child && childQs.length > 0) {
+        const result = collect(
+          childQs,
+          g.answers,
+          visibleQuestionIds(childQs, g.answers)
+        );
+        if ("error" in result) {
+          return {
+            ok: false,
+            message: `Please answer "${result.error}" for ${
+              g.name || "the child"
+            }.`,
+          };
+        }
+        childAnswers = result.length > 0 ? result : null;
+      }
+      guests.push({
+        name: g.name,
+        meal: g.meal,
+        dietary: g.dietary,
+        isPrimary: false,
+        isChild: g.child,
+        customAnswers: childAnswers,
+      });
+    }
+  }
 
   try {
     await prisma.rsvp.create({
@@ -102,6 +159,8 @@ export async function submitRsvp(input: unknown): Promise<RsvpResult> {
             meal: g.meal || null,
             dietary: g.dietary || null,
             isPrimary: g.isPrimary,
+            isChild: g.isChild,
+            customAnswers: g.customAnswers ?? undefined,
           })),
         },
       },
