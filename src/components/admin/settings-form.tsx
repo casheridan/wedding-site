@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useActionState } from "react";
 import { saveSettings, type SettingsState } from "@/server/settings";
 import type { RsvpQuestion } from "@/config/site";
-import { Card, adminInputClass, adminLabelClass } from "@/components/admin/ui";
+import { adminInputClass, adminLabelClass } from "@/components/admin/ui";
+import { CollapsibleCard } from "@/components/admin/collapsible-card";
 import { RsvpQuestionsEditor } from "@/components/admin/rsvp-questions-editor";
 import { Button } from "@/components/ui/button";
 
@@ -95,6 +96,8 @@ function ListEditor({
   blank,
   addLabel,
   initialRows,
+  open,
+  onToggle,
 }: {
   heading: string;
   description?: string;
@@ -104,6 +107,8 @@ function ListEditor({
   blank: Record<string, string>;
   addLabel: string;
   initialRows: Record<string, string>[];
+  open: boolean;
+  onToggle: () => void;
 }) {
   const [items, setItems] = useState<Row[]>(() => initialRows.map(withId));
 
@@ -124,14 +129,12 @@ function ListEditor({
   );
 
   return (
-    <Card className="space-y-4">
-      <div>
-        <h2 className="text-lg text-sage-800">{heading}</h2>
-        {description && (
-          <p className="mt-1 text-xs text-ink/45">{description}</p>
-        )}
-      </div>
-
+    <CollapsibleCard
+      title={heading}
+      description={description}
+      open={open}
+      onToggle={onToggle}
+    >
       <div className="space-y-3">
         {items.length === 0 && (
           <p className="text-sm text-ink/45">
@@ -207,11 +210,30 @@ function ListEditor({
       </button>
 
       <input type="hidden" name={name} value={serialized} readOnly />
-    </Card>
+    </CollapsibleCard>
   );
 }
 
 /* ---- Form ----------------------------------------------------------------- */
+
+const SECTIONS = [
+  "couple",
+  "dateplace",
+  "ceremony",
+  "reception",
+  "attire",
+  "attireNotes",
+  "schedule",
+  "travel",
+  "faq",
+  "rsvpForm",
+  "meals",
+  "questions",
+  "childQuestions",
+  "password",
+] as const;
+
+type SectionKey = (typeof SECTIONS)[number];
 
 export function SettingsForm({
   initial,
@@ -225,10 +247,48 @@ export function SettingsForm({
     initialState
   );
 
+  // All sections collapsed by default so the page is a short, scannable list.
+  const [open, setOpen] = useState<Record<SectionKey, boolean>>(
+    () =>
+      Object.fromEntries(SECTIONS.map((k) => [k, false])) as Record<
+        SectionKey,
+        boolean
+      >
+  );
+  const toggle = (k: SectionKey) =>
+    setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const setAll = (value: boolean) =>
+    setOpen(
+      Object.fromEntries(SECTIONS.map((k) => [k, value])) as Record<
+        SectionKey,
+        boolean
+      >
+    );
+
   return (
-    <form action={formAction} className="space-y-6">
-      <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">The couple</h2>
+    <form action={formAction} className="space-y-4">
+      <div className="flex justify-end gap-4 text-xs uppercase tracking-widest">
+        <button
+          type="button"
+          onClick={() => setAll(true)}
+          className="text-sage-700 hover:text-sage-900"
+        >
+          Expand all
+        </button>
+        <button
+          type="button"
+          onClick={() => setAll(false)}
+          className="text-sage-700 hover:text-sage-900"
+        >
+          Collapse all
+        </button>
+      </div>
+
+      <CollapsibleCard
+        title="The couple"
+        open={open.couple}
+        onToggle={() => toggle("couple")}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Partner A" name="partnerA" defaultValue={initial.partnerA} />
           <Field label="Partner B" name="partnerB" defaultValue={initial.partnerB} />
@@ -245,10 +305,13 @@ export function SettingsForm({
           defaultValue={initial.tagline}
           textarea
         />
-      </Card>
+      </CollapsibleCard>
 
-      <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">Date & place</h2>
+      <CollapsibleCard
+        title="Date & place"
+        open={open.dateplace}
+        onToggle={() => toggle("dateplace")}
+      >
         <Field
           label="Ceremony date/time (ISO with timezone)"
           name="weddingDate"
@@ -279,30 +342,39 @@ export function SettingsForm({
           type="email"
           defaultValue={initial.contactEmail}
         />
-      </Card>
+      </CollapsibleCard>
 
-      <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">Ceremony venue</h2>
+      <CollapsibleCard
+        title="Ceremony venue"
+        open={open.ceremony}
+        onToggle={() => toggle("ceremony")}
+      >
         <Field label="Name" name="ceremonyName" defaultValue={initial.ceremonyName} />
         <Field label="Address" name="ceremonyAddress" defaultValue={initial.ceremonyAddress} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Time" name="ceremonyTime" defaultValue={initial.ceremonyTime} />
           <Field label="Map URL" name="ceremonyMapUrl" defaultValue={initial.ceremonyMapUrl} />
         </div>
-      </Card>
+      </CollapsibleCard>
 
-      <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">Reception venue</h2>
+      <CollapsibleCard
+        title="Reception venue"
+        open={open.reception}
+        onToggle={() => toggle("reception")}
+      >
         <Field label="Name" name="receptionName" defaultValue={initial.receptionName} />
         <Field label="Address" name="receptionAddress" defaultValue={initial.receptionAddress} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Time" name="receptionTime" defaultValue={initial.receptionTime} />
           <Field label="Map URL" name="receptionMapUrl" defaultValue={initial.receptionMapUrl} />
         </div>
-      </Card>
+      </CollapsibleCard>
 
-      <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">Attire & RSVP</h2>
+      <CollapsibleCard
+        title="Attire & RSVP deadline"
+        open={open.attire}
+        onToggle={() => toggle("attire")}
+      >
         <Field label="Attire title" name="attireTitle" defaultValue={initial.attireTitle} />
         <Field
           label="Attire description"
@@ -315,13 +387,15 @@ export function SettingsForm({
           name="rsvpDeadline"
           defaultValue={initial.rsvpDeadline}
         />
-      </Card>
+      </CollapsibleCard>
 
       <ListEditor
         heading="Attire notes"
         description="The bullet points shown beneath the color palette on the Details page."
         name="attireNotesJson"
         addLabel="Add note"
+        open={open.attireNotes}
+        onToggle={() => toggle("attireNotes")}
         fields={[
           {
             key: "text",
@@ -340,6 +414,8 @@ export function SettingsForm({
         description="Your day-of timeline. Leave a row's description blank if you don't need one."
         name="scheduleJson"
         addLabel="Add schedule item"
+        open={open.schedule}
+        onToggle={() => toggle("schedule")}
         fields={[
           { key: "time", label: "Time", placeholder: "4:00 PM" },
           { key: "title", label: "Title", placeholder: "Ceremony" },
@@ -363,6 +439,8 @@ export function SettingsForm({
         description="Hotels, room blocks, or travel tips. Map URL and notes are optional."
         name="travelJson"
         addLabel="Add place"
+        open={open.travel}
+        onToggle={() => toggle("travel")}
         fields={[
           { key: "name", label: "Name", placeholder: "The Harbor Hotel (room block)" },
           { key: "address", label: "Address", placeholder: "456 Bay Street, …" },
@@ -389,6 +467,8 @@ export function SettingsForm({
         description="Questions and answers shown in the “What to Be Aware Of” section."
         name="faqJson"
         addLabel="Add question"
+        open={open.faq}
+        onToggle={() => toggle("faq")}
         fields={[
           { key: "question", label: "Question", full: true, placeholder: "Are kids welcome?" },
           {
@@ -406,15 +486,18 @@ export function SettingsForm({
         }))}
       />
 
-      <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">RSVP form</h2>
+      <CollapsibleCard
+        title="RSVP form"
+        open={open.rsvpForm}
+        onToggle={() => toggle("rsvpForm")}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Max party size"
             name="maxPartySize"
             type="number"
             defaultValue={initial.maxPartySize}
-            hint="Primary guest + plus-ones per response."
+            hint="Primary guest + party members per response."
           />
           <label className="flex items-center gap-2 self-end pb-2.5 text-sm text-ink/75">
             <input
@@ -439,13 +522,15 @@ export function SettingsForm({
           When on, guests must enter the same password as the seating page before
           they can RSVP. Unlocking either page unlocks both.
         </p>
-      </Card>
+      </CollapsibleCard>
 
       <ListEditor
         heading="Meal options"
         description="Choices shown in the RSVP meal dropdown. Remove all to hide meal selection entirely."
         name="mealOptionsJson"
         addLabel="Add meal"
+        open={open.meals}
+        onToggle={() => toggle("meals")}
         fields={[
           {
             key: "text",
@@ -458,27 +543,36 @@ export function SettingsForm({
         initialRows={lists.mealOptions.map((text) => ({ text }))}
       />
 
-      <RsvpQuestionsEditor initial={lists.rsvpQuestions} />
+      <RsvpQuestionsEditor
+        initial={lists.rsvpQuestions}
+        open={open.questions}
+        onToggle={() => toggle("questions")}
+      />
 
       <RsvpQuestionsEditor
         initial={lists.childQuestions}
+        open={open.childQuestions}
+        onToggle={() => toggle("childQuestions")}
         name="childQuestionsJson"
         heading="Child questions"
         description="Extra questions asked for each party member marked as a child (e.g. age, high chair, kids' meal). Same options as above."
         emptyHint="No child questions yet."
       />
 
-      <Card className="space-y-4">
-        <h2 className="text-lg text-sage-800">Guest password</h2>
+      <CollapsibleCard
+        title="Guest password"
+        open={open.password}
+        onToggle={() => toggle("password")}
+      >
         <Field
           label="Shared password guests enter to view seating (and to RSVP, if locked)"
           name="seatingPassword"
           defaultValue={initial.seatingPassword}
           hint="Leave blank to keep the current password."
         />
-      </Card>
+      </CollapsibleCard>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 pt-2">
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save settings"}
         </Button>

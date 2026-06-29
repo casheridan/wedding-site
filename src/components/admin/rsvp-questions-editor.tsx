@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { RsvpQuestion } from "@/config/site";
-import { Card, adminInputClass, adminLabelClass } from "@/components/admin/ui";
+import { adminInputClass, adminLabelClass } from "@/components/admin/ui";
+import { CollapsibleCard } from "@/components/admin/collapsible-card";
 
 type Row = {
   id: string;
@@ -40,12 +41,16 @@ const choicesOf = (options: string) =>
 
 export function RsvpQuestionsEditor({
   initial,
+  open,
+  onToggle,
   name = "rsvpQuestionsJson",
   heading = "Custom RSVP questions",
   description = "Extra questions shown to attending guests. Leave “Choices” blank for a text box, or list comma-separated choices for a dropdown. A question can be shown only when an earlier question has a specific answer.",
   emptyHint = "No custom questions yet — guests just get the standard fields.",
 }: {
   initial: RsvpQuestion[];
+  open: boolean;
+  onToggle: () => void;
   name?: string;
   heading?: string;
   description?: string;
@@ -94,12 +99,12 @@ export function RsvpQuestionsEditor({
     });
 
   return (
-    <Card className="space-y-4">
-      <div>
-        <h2 className="text-lg text-sage-800">{heading}</h2>
-        <p className="mt-1 text-xs text-ink/45">{description}</p>
-      </div>
-
+    <CollapsibleCard
+      title={heading}
+      description={description}
+      open={open}
+      onToggle={onToggle}
+    >
       <div className="space-y-3">
         {rows.length === 0 && (
           <p className="text-sm text-ink/45">{emptyHint}</p>
@@ -231,6 +236,6 @@ export function RsvpQuestionsEditor({
         value={JSON.stringify(payload)}
         readOnly
       />
-    </Card>
+    </CollapsibleCard>
   );
 }

@@ -83,7 +83,7 @@ export async function saveSeatingElements(
   return { ok: true, count: clean.length };
 }
 
-/** Create a blank, image-less room and make it the active map. */
+/** Create a blank, image-less room as an unpublished draft. */
 export async function createBlankMap(input: {
   name: string;
   roomWidth: number;
@@ -96,9 +96,9 @@ export async function createBlankMap(input: {
   const roomHeight = clamp(Math.round(input.roomHeight), 4, 1000);
   const unit = input.unit?.trim().slice(0, 8) || "ft";
 
-  await prisma.seatingMap.updateMany({ data: { isActive: false } });
+  // Start unpublished so it isn't visible to guests until the admin publishes.
   const map = await prisma.seatingMap.create({
-    data: { name, roomWidth, roomHeight, unit, imageUrl: null, isActive: true },
+    data: { name, roomWidth, roomHeight, unit, imageUrl: null, isActive: false },
   });
   revalidate();
   return { id: map.id };

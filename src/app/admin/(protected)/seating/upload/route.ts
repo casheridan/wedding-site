@@ -46,10 +46,9 @@ export async function POST(request: Request) {
       data: { imageUrl: url, width, height },
     });
   } else {
-    // New map becomes the single active one.
-    await prisma.seatingMap.updateMany({ data: { isActive: false } });
+    // New map starts unpublished; the admin publishes it when ready.
     map = await prisma.seatingMap.create({
-      data: { imageUrl: url, width, height, isActive: true },
+      data: { imageUrl: url, width, height, isActive: false },
     });
   }
 
