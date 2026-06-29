@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" font-family="Georgia, serif">
+  <rect width="1000" height="700" fill="#f3ede1"/>
+  <rect x="20" y="20" width="960" height="660" fill="#fbf8f3" stroke="#cfd9c1" stroke-width="3" rx="14"/>
+
+  <!-- Dance floor -->
+  <rect x="380" y="240" width="240" height="160" fill="#e7ecdf" stroke="#b0c09c" stroke-width="2" rx="8"/>
+  <text x="500" y="326" text-anchor="middle" fill="#708659" font-size="22" letter-spacing="3">DANCE FLOOR</text>
+
+  <!-- Round tables -->
+  <g fill="#ffffff" stroke="#8fa377" stroke-width="2">
+    <circle cx="200" cy="150" r="46"/>
+    <circle cx="400" cy="150" r="46"/>
+    <circle cx="600" cy="150" r="46"/>
+    <circle cx="800" cy="150" r="46"/>
+    <circle cx="200" cy="400" r="46"/>
+    <circle cx="400" cy="400" r="46"/>
+    <circle cx="600" cy="400" r="46"/>
+    <circle cx="800" cy="400" r="46"/>
+  </g>
+  <g fill="#586b46" font-size="18" text-anchor="middle">
+    <text x="200" y="156">1</text>
+    <text x="400" y="156">2</text>
+    <text x="600" y="156">3</text>
+    <text x="800" y="156">4</text>
+    <text x="200" y="406">5</text>
+    <text x="400" y="406">6</text>
+    <text x="600" y="406">7</text>
+    <text x="800" y="406">8</text>
+  </g>
+
+  <!-- Head table -->
+  <rect x="330" y="560" width="340" height="60" fill="#ffffff" stroke="#bd6f57" stroke-width="2" rx="10"/>
+  <text x="500" y="598" text-anchor="middle" fill="#bd6f57" font-size="18" letter-spacing="2">HEAD TABLE</text>
+
+  <!-- Entrance -->
+  <text x="500" y="660" text-anchor="middle" fill="#9aa389" font-size="14" letter-spacing="3">ENTRANCE</text>
+</svg>

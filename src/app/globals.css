@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Fonts — the *-src variables are provided by next/font in layout.tsx */
+  --font-display: var(--font-cormorant), ui-serif, Georgia, "Times New Roman", serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /*
+   * Wedding palette: Dusty Blue, Lavender, Sage Green, Peach, Cream.
+   * Sage Green is the structural/primary color (headings, nav, borders);
+   * Dusty Blue, Lavender, and Peach are the accent trio; Cream is the canvas.
+   */
+
+  /* Sage green — primary / structural. Brand swatch = sage-400 (#aab891). */
+  --color-sage-50: #f8f8f6;
+  --color-sage-100: #eef0ea;
+  --color-sage-200: #dbe0d2;
+  --color-sage-300: #c5ceb5;
+  --color-sage-400: #aab891;
+  --color-sage-500: #96a777;
+  --color-sage-600: #7f915f;
+  --color-sage-700: #69784f;
+  --color-sage-800: #596444;
+  --color-sage-900: #485138;
+
+  /* Dusty blue — accent (primary buttons, links of note). Brand swatch = dustyblue-500 (#7f97ad). */
+  --color-dustyblue-50: #f6f7f8;
+  --color-dustyblue-100: #eaedf0;
+  --color-dustyblue-200: #d2d9e0;
+  --color-dustyblue-300: #b5c2cf;
+  --color-dustyblue-400: #95a9bb;
+  --color-dustyblue-500: #7f97ad;
+  --color-dustyblue-600: #5e7992;
+  --color-dustyblue-700: #4f6478;
+  --color-dustyblue-800: #445565;
+  --color-dustyblue-900: #384552;
+
+  /* Lavender — accent (eyebrows, soft highlights). Brand swatch = lavender-300 (#beabd4). */
+  --color-lavender-50: #f7f6f9;
+  --color-lavender-100: #ede9f1;
+  --color-lavender-200: #d8cee3;
+  --color-lavender-300: #beabd4;
+  --color-lavender-400: #a68cc4;
+  --color-lavender-500: #8c6bb3;
+  --color-lavender-600: #75529e;
+  --color-lavender-700: #614582;
+  --color-lavender-800: #523c6d;
+  --color-lavender-900: #433258;
+
+  /* Peach — warm accent. Brand swatch = peach-200 (#f7baa6). (`blush-*` is a legacy alias.) */
+  --color-peach-50: #fbf6f4;
+  --color-peach-100: #f8e8e3;
+  --color-peach-200: #f7baa6;
+  --color-peach-300: #f2a991;
+  --color-peach-400: #f18460;
+  --color-peach-500: #ec5f31;
+  --color-blush-50: #fbf6f4;
+  --color-blush-100: #f8e8e3;
+  --color-blush-200: #f7baa6;
+  --color-blush-300: #f2a991;
+  --color-blush-400: #f18460;
+  --color-blush-500: #ec5f31;
+
+  /* Cream neutrals + ink. Brand swatch = cream (#f5f1e8). */
+  --color-ivory: #fbf9f4;
+  --color-cream: #f5f1e8;
+  --color-ink: #33372e;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background-color: var(--color-ivory);
+    color: var(--color-ink);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: var(--color-lavender-200);
+    color: var(--color-lavender-900);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* Small uppercase label used above section titles. */
+  .eyebrow {
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-lavender-600);
+  }
 }

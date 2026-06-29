@@ -1,0 +1,133 @@
+// Wedding site data model.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Admin ---------------------------------------------------------------
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// --- RSVP ----------------------------------------------------------------
+
+model Rsvp {
+  id          String      @id @default(cuid())
+  name        String
+  email       String
+  attending   Boolean
+  partySize   Int         @default(0)
+  songRequest String?
+  message     String?
+  guests      RsvpGuest[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([createdAt])
+}
+
+model RsvpGuest {
+  id        String   @id @default(cuid())
+  rsvpId    String
+  rsvp      Rsvp     @relation(fields: [rsvpId], references: [id], onDelete: Cascade)
+  name      String
+  meal      String?
+  dietary   String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([rsvpId])
+}
+
+// --- Announcements -------------------------------------------------------
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  pinned    Boolean  @default(false)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, pinned, createdAt])
+}
+
+// --- Seating -------------------------------------------------------------
+
+model SeatingMap {
+  id   String @id @default(cuid())
+  name String @default("Reception")
+  // Optional background image. When null, the map is a "from scratch" room
+  // drawn on a blank canvas sized by roomWidth/roomHeight.
+  imageUrl String?
+  // Natural pixel dimensions of the uploaded image (for aspect ratio).
+  width  Int?
+  height Int?
+  // Room dimensions for blank (image-less) maps, in `unit` (default feet).
+  // These set the canvas aspect ratio and are shown as a scale reference.
+  roomWidth  Int?
+  roomHeight Int?
+  unit       String       @default("ft")
+  isActive   Boolean      @default(true)
+  elements   SeatingPin[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+// A single item on a seating map. Despite the name, this represents any floor
+// element: a table (searchable, carries guest names), an area (dance floor,
+// bar, stage), a door, a free text label, or a misc item.
+model SeatingPin {
+  id    String     @id @default(cuid())
+  mapId String
+  map   SeatingMap @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  // Element type: "table" | "area" | "door" | "text" | "misc".
+  kind String @default("table")
+  // Visual shape: "circle" | "rect".
+  shape String @default("circle")
+  // Main text shown on the element — a table name, area name, or label.
+  label String
+  // Optional family/party grouping for lookup (tables).
+  party String?
+  // Optional table identifier, e.g. "Table 5" (tables).
+  table String?
+  // All individual guest names at this element (enables multi-person lookup).
+  names String[]
+  // Optional seat capacity (tables).
+  seats Int?
+  // Optional fill color override (CSS hex). Falls back to a per-kind default.
+  color String?
+  // Center position as a fraction of canvas size (0..1), so it scales.
+  x Float
+  y Float
+  // Size as a fraction of canvas WIDTH (so circles stay circular).
+  w Float @default(0.09)
+  h Float @default(0.09)
+  // Rotation in degrees.
+  rotation  Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mapId])
+}
+
+// --- Editable site content ----------------------------------------------
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
