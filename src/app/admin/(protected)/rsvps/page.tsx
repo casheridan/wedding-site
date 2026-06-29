@@ -5,6 +5,23 @@ import { cn, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+type CustomAnswer = { question: string; answer: string };
+
+/** Safely read the JSON customAnswers column into a typed list. */
+function customAnswersOf(value: unknown): CustomAnswer[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((x) =>
+    x && typeof x === "object" && "question" in x && "answer" in x
+      ? [
+          {
+            question: String((x as Record<string, unknown>).question),
+            answer: String((x as Record<string, unknown>).answer),
+          },
+        ]
+      : []
+  );
+}
+
 export default async function AdminRsvpsPage() {
   const rsvps = await prisma.rsvp.findMany({
     include: { guests: { orderBy: { isPrimary: "desc" } } },
@@ -120,6 +137,17 @@ export default async function AdminRsvpsPage() {
                   </li>
                 ))}
               </ul>
+            )}
+
+            {customAnswersOf(r.customAnswers).length > 0 && (
+              <div className="mt-3 space-y-1 border-t border-sage-50 pt-3 text-sm">
+                {customAnswersOf(r.customAnswers).map((a, i) => (
+                  <p key={i} className="text-ink/70">
+                    <span className="text-ink/45">{a.question}:</span>{" "}
+                    {a.answer}
+                  </p>
+                ))}
+              </div>
             )}
 
             {(r.songRequest || r.message) && (

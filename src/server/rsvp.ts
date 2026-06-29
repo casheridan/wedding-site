@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { getSiteContent } from "@/lib/content";
 
 const guestSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -17,6 +18,7 @@ const rsvpSchema = z.object({
   primaryDietary: z.string().trim().max(500).optional().default(""),
   additionalGuests: z.array(guestSchema).max(20).optional().default([]),
   songRequest: z.string().trim().max(300).optional().default(""),
+  answers: z.record(z.string(), z.string().max(2000)).optional().default({}),
   message: z.string().trim().max(2000).optional().default(""),
 });
 
@@ -36,6 +38,20 @@ export async function submitRsvp(input: unknown): Promise<RsvpResult> {
 
   const data = parsed.data;
   const attending = data.attending === "yes";
+
+  // Custom questions: enforce required answers and snapshot the ones provided
+  // (label + answer) so responses stay readable even if questions change later.
+  const customAnswers: { question: string; answer: string }[] = [];
+  if (attending) {
+    const site = await getSiteContent();
+    for (const q of site.rsvp.questions) {
+      const answer = (data.answers[q.id] ?? "").trim();
+      if (q.required && !answer) {
+        return { ok: false, message: `Please answer: ${q.label}` };
+      }
+      if (answer) customAnswers.push({ question: q.label, answer });
+    }
+  }
 
   // Normalize attendees: primary guest first, then plus-ones.
   const guests = attending
@@ -59,6 +75,7 @@ export async function submitRsvp(input: unknown): Promise<RsvpResult> {
         partySize: guests.length,
         songRequest: attending ? data.songRequest || null : null,
         message: data.message || null,
+        customAnswers: customAnswers.length > 0 ? customAnswers : undefined,
         guests: {
           create: guests.map((g) => ({
             name: g.name,

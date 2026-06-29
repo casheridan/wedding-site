@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { setSetting } from "@/lib/settings";
 import type { ContentOverride } from "@/lib/content";
-import type { ScheduleItem, Place, FaqItem } from "@/config/site";
+import type {
+  ScheduleItem,
+  Place,
+  FaqItem,
+  RsvpQuestion,
+} from "@/config/site";
 
 export type SettingsState = { ok?: boolean; error?: string };
 
@@ -65,6 +70,33 @@ export async function saveSettings(
     .filter((r) => r.question || r.answer)
     .map((r) => ({ question: r.question, answer: r.answer }));
 
+  const mealOptions = rows("mealOptionsJson")
+    .map((r) => r.text)
+    .filter(Boolean);
+
+  const rsvpQuestions: RsvpQuestion[] = rows("rsvpQuestionsJson")
+    .filter((r) => r.label)
+    .map((r, i) => {
+      const opts = r.options
+        ? r.options
+            .split(",")
+            .map((o) => o.trim())
+            .filter(Boolean)
+        : [];
+      return {
+        id: `q${i + 1}`,
+        label: r.label,
+        ...(opts.length > 0 ? { options: opts } : {}),
+        ...(r.required === "1" ? { required: true } : {}),
+      };
+    });
+
+  const partySizeNum = parseInt(s("maxPartySize"), 10);
+  const maxPartySize =
+    Number.isFinite(partySizeNum) && partySizeNum > 0
+      ? Math.min(partySizeNum, 20)
+      : undefined;
+
   const content: ContentOverride = {
     couple: { partnerA: s("partnerA"), partnerB: s("partnerB") },
     hashtag: s("hashtag"),
@@ -96,7 +128,13 @@ export async function saveSettings(
     schedule,
     travel,
     faq,
-    rsvp: { deadlineDisplay: s("rsvpDeadline") },
+    rsvp: {
+      deadlineDisplay: s("rsvpDeadline"),
+      mealOptions,
+      askSongRequest: formData.get("askSongRequest") === "on",
+      questions: rsvpQuestions,
+      ...(maxPartySize ? { maxPartySize } : {}),
+    },
   };
 
   try {

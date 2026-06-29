@@ -27,6 +27,17 @@ export type ScheduleItem = {
   description?: string;
 };
 
+export type RsvpQuestion = {
+  /** Stable id used to key answers within a submission. */
+  id: string;
+  /** The question text shown to guests. */
+  label: string;
+  /** If non-empty, renders a dropdown of these choices instead of a text box. */
+  options?: string[];
+  /** Require an answer (only enforced for attending guests). */
+  required?: boolean;
+};
+
 export type Place = {
   name: string;
   address: string;
@@ -169,6 +180,11 @@ export const siteConfig = {
     maxPartySize: 6,
     /** Collect a song request? */
     askSongRequest: true,
+    /**
+     * Extra questions you define in the admin. Shown to attending guests.
+     * Each needs a stable `id`; add an `options` list to make it a dropdown.
+     */
+    questions: [] as RsvpQuestion[],
   },
 
   /** Where guests can reach you with questions. */

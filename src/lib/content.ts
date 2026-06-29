@@ -5,6 +5,7 @@ import {
   type Place,
   type ScheduleItem,
   type FaqItem,
+  type RsvpQuestion,
 } from "@/config/site";
 import { getSetting } from "@/lib/settings";
 
@@ -25,7 +26,13 @@ export type ContentOverride = {
   schedule?: ScheduleItem[];
   travel?: Place[];
   faq?: FaqItem[];
-  rsvp?: { deadlineDisplay?: string };
+  rsvp?: {
+    deadlineDisplay?: string;
+    mealOptions?: string[];
+    maxPartySize?: number;
+    askSongRequest?: boolean;
+    questions?: RsvpQuestion[];
+  };
 };
 
 /** Drop undefined / empty-string values so blank fields fall back to defaults. */

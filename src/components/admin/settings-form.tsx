@@ -13,6 +13,8 @@ export type SettingsLists = {
   schedule: { time: string; title: string; description?: string }[];
   travel: { name: string; address: string; mapUrl?: string; notes?: string }[];
   faq: { question: string; answer: string }[];
+  mealOptions: string[];
+  rsvpQuestions: { label: string; options?: string[]; required?: boolean }[];
 };
 
 const initialState: SettingsState = {};
@@ -70,6 +72,8 @@ type FieldDef = {
   label: string;
   placeholder?: string;
   textarea?: boolean;
+  /** Render a checkbox storing "1" / "" instead of a text input. */
+  check?: boolean;
   /** Span both columns in the row grid. */
   full?: boolean;
 };
@@ -137,7 +141,25 @@ function ListEditor({
             className="rounded-xl border border-sage-100 bg-ivory/60 p-4"
           >
             <div className="grid gap-3 sm:grid-cols-2">
-              {fields.map((f) => (
+              {fields.map((f) =>
+                f.check ? (
+                  <label
+                    key={f.key}
+                    className={`flex items-center gap-2 text-sm text-ink/75 ${
+                      f.full ? "sm:col-span-2" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={item[f.key] === "1"}
+                      onChange={(e) =>
+                        update(idx, f.key, e.target.checked ? "1" : "")
+                      }
+                      className="h-4 w-4 rounded border-sage-300 text-sage-600"
+                    />
+                    {f.label}
+                  </label>
+                ) : (
                 <div key={f.key} className={f.full ? "sm:col-span-2" : ""}>
                   <label className={adminLabelClass}>{f.label}</label>
                   {f.textarea ? (
@@ -378,6 +400,73 @@ export function SettingsForm({
         initialRows={lists.faq.map((f) => ({
           question: f.question,
           answer: f.answer,
+        }))}
+      />
+
+      <Card className="space-y-4">
+        <h2 className="text-lg text-sage-800">RSVP form</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Max party size"
+            name="maxPartySize"
+            type="number"
+            defaultValue={initial.maxPartySize}
+            hint="Primary guest + plus-ones per response."
+          />
+          <label className="flex items-center gap-2 self-end pb-2.5 text-sm text-ink/75">
+            <input
+              type="checkbox"
+              name="askSongRequest"
+              defaultChecked={initial.askSongRequest === "1"}
+              className="h-4 w-4 rounded border-sage-300 text-sage-600"
+            />
+            Ask guests for a song request
+          </label>
+        </div>
+      </Card>
+
+      <ListEditor
+        heading="Meal options"
+        description="Choices shown in the RSVP meal dropdown. Remove all to hide meal selection entirely."
+        name="mealOptionsJson"
+        addLabel="Add meal"
+        fields={[
+          {
+            key: "text",
+            label: "Meal",
+            full: true,
+            placeholder: "e.g. Filet Mignon",
+          },
+        ]}
+        blank={{ text: "" }}
+        initialRows={lists.mealOptions.map((text) => ({ text }))}
+      />
+
+      <ListEditor
+        heading="Custom RSVP questions"
+        description="Extra questions shown to attending guests. Leave “Choices” blank for a text box, or list comma-separated choices to make it a dropdown."
+        name="rsvpQuestionsJson"
+        addLabel="Add question"
+        fields={[
+          {
+            key: "label",
+            label: "Question",
+            full: true,
+            placeholder: "e.g. Will you need the shuttle?",
+          },
+          {
+            key: "options",
+            label: "Choices (optional, comma-separated)",
+            full: true,
+            placeholder: "Yes, No, Not sure yet",
+          },
+          { key: "required", label: "Required", check: true, full: true },
+        ]}
+        blank={{ label: "", options: "", required: "" }}
+        initialRows={lists.rsvpQuestions.map((q) => ({
+          label: q.label,
+          options: (q.options ?? []).join(", "),
+          required: q.required ? "1" : "",
         }))}
       />
 

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { submitRsvp, type RsvpResult } from "@/server/rsvp";
+import type { RsvpQuestion } from "@/config/site";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -11,10 +12,12 @@ export function RsvpForm({
   mealOptions,
   maxPartySize,
   askSongRequest,
+  questions = [],
 }: {
   mealOptions: string[];
   maxPartySize: number;
   askSongRequest: boolean;
+  questions?: RsvpQuestion[];
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,6 +26,7 @@ export function RsvpForm({
   const [primaryDietary, setPrimaryDietary] = useState("");
   const [guests, setGuests] = useState<Guest[]>([]);
   const [songRequest, setSongRequest] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
 
   const [isPending, startTransition] = useTransition();
@@ -51,6 +55,7 @@ export function RsvpForm({
         primaryDietary,
         additionalGuests: attending === "yes" ? guests : [],
         songRequest: attending === "yes" ? songRequest : "",
+        answers: attending === "yes" ? answers : {},
         message,
       });
       setResult(res);
@@ -236,6 +241,43 @@ export function RsvpForm({
               />
             </Field>
           )}
+
+          {questions.map((q) => {
+            const label = q.required ? q.label : `${q.label} (optional)`;
+            return (
+              <Field key={q.id} label={label} htmlFor={`q-${q.id}`}>
+                {q.options && q.options.length > 0 ? (
+                  <select
+                    id={`q-${q.id}`}
+                    required={q.required}
+                    value={answers[q.id] ?? ""}
+                    onChange={(e) =>
+                      setAnswers((a) => ({ ...a, [q.id]: e.target.value }))
+                    }
+                    className={inputClass}
+                  >
+                    <option value="">Select…</option>
+                    {q.options.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id={`q-${q.id}`}
+                    type="text"
+                    required={q.required}
+                    value={answers[q.id] ?? ""}
+                    onChange={(e) =>
+                      setAnswers((a) => ({ ...a, [q.id]: e.target.value }))
+                    }
+                    className={inputClass}
+                  />
+                )}
+              </Field>
+            );
+          })}
         </div>
       )}
 

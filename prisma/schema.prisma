@@ -31,6 +31,9 @@ model Rsvp {
   partySize   Int         @default(0)
   songRequest String?
   message     String?
+  // Answers to admin-defined custom questions, snapshotted at submit time as
+  // an array of { question, answer } so it stays readable if questions change.
+  customAnswers Json?
   guests      RsvpGuest[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

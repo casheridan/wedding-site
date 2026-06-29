@@ -24,6 +24,28 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
+  // Gather custom-question columns (one per distinct question label, in first-seen order).
+  const answersOf = (value: unknown): { question: string; answer: string }[] =>
+    Array.isArray(value)
+      ? value.flatMap((x) =>
+          x && typeof x === "object" && "question" in x && "answer" in x
+            ? [
+                {
+                  question: String((x as Record<string, unknown>).question),
+                  answer: String((x as Record<string, unknown>).answer),
+                },
+              ]
+            : []
+        )
+      : [];
+
+  const questionCols: string[] = [];
+  for (const r of rsvps) {
+    for (const a of answersOf(r.customAnswers)) {
+      if (!questionCols.includes(a.question)) questionCols.push(a.question);
+    }
+  }
+
   const header = [
     "Responded",
     "Primary Name",
@@ -36,6 +58,7 @@ export async function GET() {
     "Dietary",
     "Song Request",
     "Note",
+    ...questionCols,
   ];
 
   const rows: string[] = [header.map(csvCell).join(",")];
@@ -48,7 +71,14 @@ export async function GET() {
       r.attending ? "Yes" : "No",
       r.partySize,
     ];
-    const tail = [r.songRequest ?? "", r.message ?? ""];
+    const answerMap = new Map(
+      answersOf(r.customAnswers).map((a) => [a.question, a.answer])
+    );
+    const tail = [
+      r.songRequest ?? "",
+      r.message ?? "",
+      ...questionCols.map((q) => answerMap.get(q) ?? ""),
+    ];
 
     if (r.attending && r.guests.length > 0) {
       for (const g of r.guests) {

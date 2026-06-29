@@ -34,6 +34,8 @@ export default async function AdminSettingsPage() {
     attireTitle: site.attire.title,
     attireDescription: site.attire.description,
     rsvpDeadline: site.rsvp.deadlineDisplay,
+    maxPartySize: String(site.rsvp.maxPartySize),
+    askSongRequest: site.rsvp.askSongRequest ? "1" : "",
     seatingPassword,
   };
 
@@ -42,6 +44,8 @@ export default async function AdminSettingsPage() {
     schedule: site.schedule,
     travel: site.travel,
     faq: site.faq,
+    mealOptions: site.rsvp.mealOptions,
+    rsvpQuestions: site.rsvp.questions,
   };
 
   return (
